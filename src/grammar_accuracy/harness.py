@@ -65,9 +65,10 @@ def _src_dir(path: Path) -> Path:
 
 
 def compile_grammar(path: Path) -> Path:
-    """Compile a grammar checkout's committed parser.c (+ scanner.c) to a cached shared library."""
+    """Compile a grammar checkout's committed parser.c (+ scanner.c, or an older grammar's C++
+    scanner.cc) to a cached shared library."""
     src = _src_dir(path)
-    sources = [src / 'parser.c'] + [p for p in (src / 'scanner.c',) if p.is_file()]
+    sources = [src / 'parser.c'] + [p for p in (src / 'scanner.c', src / 'scanner.cc') if p.is_file()]
     h = hashlib.sha256()
     for p in sources:
         h.update(p.name.encode() + b'\0' + p.read_bytes())
@@ -75,7 +76,11 @@ def compile_grammar(path: Path) -> Path:
     if not out.exists():
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_suffix(f'.{os.getpid()}.tmp')
-        subprocess.run(['cc', '-O2', '-shared', '-fPIC', '-I', str(src), *map(str, sources), '-o', str(tmp)], check=True)
+        cxx = any(p.suffix == '.cc' for p in sources)
+        # the C++ driver links libstdc++; -x keeps parser.c compiled as C
+        files = [a for p in sources for a in ('-x', 'c++' if p.suffix == '.cc' else 'c', str(p))]
+        subprocess.run(['c++' if cxx else 'cc', '-O2', '-shared', '-fPIC', '-I', str(src), *files, '-o', str(tmp)],
+                       check=True)
         tmp.replace(out)
     return out
 

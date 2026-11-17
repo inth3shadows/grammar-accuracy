@@ -4,7 +4,11 @@
     "/path/to/tree-sitter-python",
     "ast.parse",
     "grammar.js",
+    "parsing_errors",
     "scanner.c",
-    "src/parser.c"
+    "source_file",
+    "src/parser.c",
+    "src/scanner.c",
+    "type_alias"
   ]
 }

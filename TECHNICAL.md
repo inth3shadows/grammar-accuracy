@@ -19,7 +19,7 @@ for each corpus file:  oracle_nodes(bytes)  ─┐
 - The oracle parses each file once per run, however many builds are passed.
 
 Design decisions:
-- **Compile committed `src/parser.c`, not `grammar.js`.** It measures what a grammar actually ships
+- **Compile committed `src/parser.c`, not `grammar.js`.** (`c++` when the scanner is an older `scanner.cc`.) It measures what a grammar actually ships
   and needs only `cc`, not the tree-sitter CLI or Node.
 - **PyCapsule, not an int pointer.** py-tree-sitter 0.25 deprecates `Language(int)`.
 - **Sets, not multisets.** Two nodes of one category with the same span are counted once on both
