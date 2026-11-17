@@ -1,0 +1,25 @@
+[project]
+name = "grammar-accuracy"
+version = "0.1.0"
+description = "Tree accuracy of tree-sitter grammars against each language's reference parser"
+readme = "README.md"
+authors = [
+    { name = "Eric Minish" }
+]
+requires-python = ">=3.14"
+license = "MIT"
+dependencies = [
+    "tree-sitter==0.25.2",
+]
+
+[project.scripts]
+grammar-accuracy = "grammar_accuracy.harness:main"
+
+[build-system]
+requires = ["uv_build>=0.11.31,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+]

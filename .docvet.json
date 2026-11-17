@@ -1,0 +1,10 @@
+{
+  "baseline_commit": "",
+  "known_dead": [
+    "/path/to/tree-sitter-python",
+    "ast.parse",
+    "grammar.js",
+    "scanner.c",
+    "src/parser.c"
+  ]
+}
