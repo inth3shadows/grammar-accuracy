@@ -7,6 +7,7 @@ import ctypes
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -16,7 +17,9 @@ from pathlib import Path
 
 import tree_sitter
 
-from . import python as lang
+from . import javascript, python
+
+LANGS = {'python': python, 'javascript': javascript}
 
 ROOT = Path(__file__).resolve().parents[2]
 PINS = ROOT / 'pins.json'
@@ -26,8 +29,8 @@ def cache_root() -> Path:
     return Path(os.environ.get('GRAMMAR_ACCURACY_CACHE', Path.home() / '.cache' / 'grammar-accuracy'))
 
 
-def load_pins() -> dict:
-    return json.loads(PINS.read_text())
+def load_pins(language: str) -> dict:
+    return json.loads(PINS.read_text())[language]
 
 
 def fetch_repo(repo: str, sha: str, dest: Path) -> Path:
@@ -137,11 +140,11 @@ class Score:
                     'oracle': self.oracle[c]} for c in cats}
 
 
-def list_files(base: Path) -> list[Path]:
+def list_files(base: Path, exts: frozenset[str]) -> list[Path]:
     out = []
     for dirpath, dirnames, filenames in os.walk(base):
         dirnames[:] = sorted(d for d in dirnames if d not in ('.git', 'node_modules'))
-        out.extend(Path(dirpath, f) for f in filenames if Path(f).suffix in lang.EXTS)
+        out.extend(Path(dirpath, f) for f in filenames if Path(f).suffix in exts)
     return sorted(p for p in out if p.is_file() and not p.is_symlink())
 
 
@@ -155,7 +158,8 @@ def _snippet(src: bytes, start: int, end: int, width: int = 80) -> str:
 
 
 def run(args: argparse.Namespace) -> int:
-    pins = load_pins()
+    lang = LANGS[args.lang]
+    pins = load_pins(args.lang)
     specs = args.build or [f'{n}={grammar_dir(n, g)}' for n, g in pins['grammars'].items()]
     builds = []
     for spec in specs:
@@ -166,7 +170,7 @@ def run(args: argparse.Namespace) -> int:
         raise SystemExit(f'unknown corpus in {args.corpus}')
 
     scores = {name: Score() for name, _ in builds}
-    files = rejected = 0
+    files = rejected = skipped = 0
     shown = Counter()
     t0 = time.monotonic()
     for c in corpora:
@@ -174,11 +178,16 @@ def run(args: argparse.Namespace) -> int:
         if not (base / '.fetched').exists():
             raise SystemExit(f"corpus {c['name']} is not fetched; run `grammar-accuracy fetch`")
         root = base / c['subdir'] if c['subdir'] else base
-        paths = list_files(root)
+        paths = list_files(root, lang.EXTS)
+        # a corpus can exclude files by content, e.g. test262's tests that must fail to parse
+        skip = re.compile(c['skip_if'].encode()) if c.get('skip_if') else None
         if not paths:
             raise SystemExit(f"corpus {c['name']}: 0 files under {root}")
         for p in paths:
             src = p.read_bytes()
+            if skip and skip.search(src):
+                skipped += 1
+                continue
             theirs = lang.oracle_nodes(src)
             if theirs is None:
                 rejected += 1
@@ -201,7 +210,7 @@ def run(args: argparse.Namespace) -> int:
     if files == 0:
         raise SystemExit('oracle accepted 0 files: is it blind?')
 
-    print(f'{files} files accepted by CPython {sys.version.split()[0]} ast ({rejected} rejected or not UTF-8), '
+    print(f'{files} files accepted by {lang.oracle_name()} ({rejected} rejected or not UTF-8, {skipped} skipped by corpus rule), '
           f'{time.monotonic() - t0:.0f}s')
     print(f"{'build':<16} {'precision %':>11} {'recall %':>9} {'wrong':>7} {'missed':>7} {'error files':>11}")
     for name, _ in builds:
@@ -214,8 +223,9 @@ def run(args: argparse.Namespace) -> int:
                 print(f"  {cat:<14} {v['wrong']:>6} {v['missed']:>6} {v['oracle']:>9}")
     if args.json:
         out = {
-            'oracle': f'CPython {sys.version.split()[0]} ast.parse',
-            'files': files, 'rejected': rejected,
+            'language': args.lang,
+            'oracle': lang.oracle_name(),
+            'files': files, 'rejected': rejected, 'skipped': skipped,
             'corpora': {c['name']: c['sha'] for c in corpora},
             'builds': {n: {**scores[n].totals(), 'categories': scores[n].by_category(),
                            'error_file_list': scores[n].error_files} for n, _ in builds},
@@ -224,22 +234,29 @@ def run(args: argparse.Namespace) -> int:
     return 0
 
 
-def fetch(_: argparse.Namespace) -> int:
-    pins = load_pins()
+def fetch(args: argparse.Namespace) -> int:
+    for language in args.lang or LANGS:
+        _fetch(load_pins(language))
+    return 0
+
+
+def _fetch(pins: dict) -> None:
     for name, g in pins['grammars'].items():
         print(f"grammar {name}: {g['repo']}@{g['ref']}")
         fetch_repo(g['repo'], g['sha'], grammar_dir(name, g))
     for c in pins['corpora']:
         print(f"corpus {c['name']}: {c['repo']}@{c['ref']}")
         fetch_repo(c['repo'], c['sha'], corpus_dir(c))
-    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog='grammar-accuracy', description=__doc__)
     sub = ap.add_subparsers(dest='cmd', required=True)
-    sub.add_parser('fetch', help='fetch the pinned grammars and corpora into the cache').set_defaults(fn=fetch)
+    f = sub.add_parser('fetch', help='fetch the pinned grammars and corpora into the cache')
+    f.add_argument('--lang', action='append', choices=LANGS, help='only this language (repeatable; default: all)')
+    f.set_defaults(fn=fetch)
     r = sub.add_parser('run', help='score grammar builds against the oracle')
+    r.add_argument('--lang', choices=LANGS, default='python', help='language (default: python)')
     r.add_argument('--build', action='append', metavar='NAME=PATH',
                    help='grammar checkout, its src/, or a compiled .so (repeatable; default: pinned upstream)')
     r.add_argument('--corpus', action='append', help='limit to this corpus (repeatable)')

@@ -7,7 +7,7 @@ from grammar_accuracy import python as lang
 
 @pytest.fixture(scope='session')
 def parser():
-    name, g = next(iter(harness.load_pins()['grammars'].items()))
+    name, g = next(iter(harness.load_pins('python')['grammars'].items()))
     path = harness.fetch_repo(g['repo'], g['sha'], harness.grammar_dir(name, g))
     return tree_sitter.Parser(harness.load_language(harness.compile_grammar(path), lang.SYMBOL))
 

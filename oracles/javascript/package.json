@@ -1,0 +1,9 @@
+{
+  "name": "grammar-accuracy-oracle-javascript",
+  "private": true,
+  "type": "module",
+  "description": "JavaScript oracle for grammar-accuracy: the TypeScript compiler's parser over .js files",
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}

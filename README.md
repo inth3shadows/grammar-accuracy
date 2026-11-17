@@ -12,6 +12,7 @@ An error check ("does the file parse?") cannot see a wrong tree that has no ERRO
 | Language | Grammar | Oracle |
 |---|---|---|
 | Python | tree-sitter-python | CPython `ast.parse` |
+| JavaScript | tree-sitter-javascript | TypeScript compiler's parser (`ts.createSourceFile`, as .js) |
 
 ## Method (Python)
 
@@ -33,7 +34,7 @@ Differences the grammar cannot change are left out on both sides (details in
 literals, `*args` in parameter lists, match-statement patterns, string nodes (their inner
 expressions still count), tuples, and PEP 695 type-parameter declarations.
 
-## Results
+## Results (Python)
 
 Measured 2026-11-17 with CPython 3.14.5. Full numbers per category: `results/`.
 
@@ -136,9 +137,51 @@ Not comparable (they build no nodes this harness counts):
 - tree-sitter-sage, tree-sitter-myth and tree-sitter-python-jsx are Python supersets kept under the
   same symbol; they are scored as Python.
 
+## JavaScript
+
+- **Oracle**: the TypeScript compiler's parser, typescript 5.9.3 (pinned in
+  `oracles/javascript/package-lock.json`), reading each file as a .js file. It runs as a long-lived
+  Node helper (`oracles/javascript/oracle.mjs`). A file is rejected when tsc reports any syntactic
+  diagnostic for it as JavaScript, including TypeScript-only syntax.
+- **Files**: `.js`/`.mjs`/`.cjs`/`.jsx` in Node.js `lib/` v24.11.1, webpack `lib/` v5.102.1, three.js
+  `src/` r181, and [test262](https://github.com/tc39/test262) `test/` (the ECMAScript conformance
+  suite). From test262, tests that must fail to parse (`negative: phase: parse`) and module-only tests
+  (`flags: [module]`) are skipped: tsc decides module or script from the file, not the test's flags.
+  That is 50,324 files.
+- **Categories**: binary, unary, await, call, member, subscript, new, ternary, arrow, parenthesized,
+  yield, spread: the expression half of the TypeScript harness. Left out on both sides: comma
+  expressions, statement-condition parentheses, and JSX. A destructuring *assignment* target
+  (`[a, ...b] = x`) is an expression in tsc, so its `rest_pattern` and `assignment_pattern` count as
+  spread and binary; binding patterns in declarations and parameters do not count on either side.
+
+### Results (JavaScript)
+
+Measured 2026-11-17. Full numbers per category: `results/javascript-upstream-v0.25.0.json`.
+
+| Build | Commit | Files | Precision % | Recall % | Wrong | Missed | Error files |
+|---|---|---|---|---|---|---|---|
+| tree-sitter-javascript v0.25.0, real code (node, webpack, three) | 44c892e | 1,632 | 100.000 | 100.000 | 0 | 0 | 0 |
+| tree-sitter-javascript v0.25.0, all four corpora | 44c892e | 50,324 | 99.968 | 99.990 | 475 | 153 | 230 |
+
+On ordinary code tree-sitter-javascript matches tsc on every counted node. Every mismatch is in
+test262's spec corners and new syntax. Each class below was confirmed by parsing a minimal snippet:
+
+| Input | tree-sitter-javascript reads it as | Nodes |
+|---|---|---|
+| `for await (let [x] of y)` | `let[x]`: a subscript of a variable named `let` (plain `for (let [x] of y)` is right) | ~250 |
+| `var yield = 1; x = yield;` (sloppy mode, `yield` is a name) | a `yield` expression | ~90 |
+| `import.source(x)` (source-phase imports) | ERROR, then a call of `source` | ~115 |
+| `async function* g() { await (x).next() }` | a call of a function named `await`: the async generator's `await` is missed | ~40 |
+| `@C.#x class D {}` (decorator with a private name) | the member expression is missed | ~16 |
+| `await using x = r` | an assignment, not a declaration | ~8 |
+| `{a: 1}[0]` at statement start (a block, then an array) | a subscript of an object literal | few |
+
+"Nodes" counts wrong + missed nodes in the run, from the `--show` output, rounded.
+
 ## Prerequisites
 
 - Python 3.14+ and [uv](https://docs.astral.sh/uv/)
+- Node 22+ and npm, for the JavaScript oracle
 - A C compiler (`cc`) and `git`
 - Network access for the first `fetch` (GitHub)
 
@@ -146,12 +189,14 @@ Not comparable (they build no nodes this harness counts):
 
 ```sh
 uv sync
-uv run grammar-accuracy fetch                 # pinned grammar + corpora into ~/.cache/grammar-accuracy
+uv run grammar-accuracy fetch                 # pinned grammars + corpora (all languages) into ~/.cache/grammar-accuracy
+(cd oracles/javascript && npm ci)             # the JavaScript oracle
 uv run grammar-accuracy run --categories      # about a minute
 uv run grammar-accuracy run \
   --build upstream=~/.cache/grammar-accuracy/grammars/upstream-293fdc02038e \
   --build fork=/path/to/tree-sitter-python    # several builds in one pass; ast parses each file once
 uv run grammar-accuracy run --show 20 --show-category spread   # print mismatched nodes with source
+uv run grammar-accuracy run --lang javascript --categories     # about two minutes
 uv run pytest
 ```
 
@@ -162,6 +207,7 @@ moves the cache.
 
 - `src/grammar_accuracy/harness.py`: fetching, compiling grammar builds, scoring, CLI
 - `src/grammar_accuracy/python.py`: the Python oracle and category mapping
+- `src/grammar_accuracy/javascript.py` + `oracles/javascript/`: the JavaScript mapping and its Node oracle helper
 - `pins.json`: pinned grammar and corpus commits
 - `results/`: recorded runs
 - `tests/`: the harness's own tests

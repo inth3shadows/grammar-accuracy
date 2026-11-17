@@ -1,10 +1,74 @@
 {
-  "grammars": {
-    "upstream": {"repo": "tree-sitter/tree-sitter-python", "ref": "v0.25.0", "sha": "293fdc02038ee2bf0e2e206711b69c90ac0d413f"}
+  "python": {
+    "grammars": {
+      "upstream": {
+        "repo": "tree-sitter/tree-sitter-python",
+        "ref": "v0.25.0",
+        "sha": "293fdc02038ee2bf0e2e206711b69c90ac0d413f"
+      }
+    },
+    "corpora": [
+      {
+        "name": "cpython",
+        "repo": "python/cpython",
+        "ref": "v3.14.0",
+        "sha": "ebf955df7a89ed0c7968f79faec1de49f61ed7cb",
+        "subdir": "Lib"
+      },
+      {
+        "name": "django",
+        "repo": "django/django",
+        "ref": "5.2.8",
+        "sha": "47fe39af56ecd0ad73b9c7562511015e96b91b80",
+        "subdir": ""
+      },
+      {
+        "name": "pydantic",
+        "repo": "pydantic/pydantic",
+        "ref": "v2.12.4",
+        "sha": "5c842dfc9c245fb37aa1f5ec5b55c1aed10bd7e6",
+        "subdir": ""
+      }
+    ]
   },
-  "corpora": [
-    {"name": "cpython", "repo": "python/cpython", "ref": "v3.14.0", "sha": "ebf955df7a89ed0c7968f79faec1de49f61ed7cb", "subdir": "Lib"},
-    {"name": "django", "repo": "django/django", "ref": "5.2.8", "sha": "47fe39af56ecd0ad73b9c7562511015e96b91b80", "subdir": ""},
-    {"name": "pydantic", "repo": "pydantic/pydantic", "ref": "v2.12.4", "sha": "5c842dfc9c245fb37aa1f5ec5b55c1aed10bd7e6", "subdir": ""}
-  ]
+  "javascript": {
+    "grammars": {
+      "upstream": {
+        "repo": "tree-sitter/tree-sitter-javascript",
+        "ref": "v0.25.0",
+        "sha": "44c892e0be055ac465d5eeddae6d3e194424e7de"
+      }
+    },
+    "corpora": [
+      {
+        "name": "node",
+        "repo": "nodejs/node",
+        "ref": "v24.11.1",
+        "sha": "18aefb2d2b36938316d27b5cb53089e97632f0c3",
+        "subdir": "lib"
+      },
+      {
+        "name": "webpack",
+        "repo": "webpack/webpack",
+        "ref": "v5.102.1",
+        "sha": "c7ebdbda637ea73a03a23446f5db0f600e304772",
+        "subdir": "lib"
+      },
+      {
+        "name": "three",
+        "repo": "mrdoob/three.js",
+        "ref": "r181",
+        "sha": "f265b19cceb299184bcc26653ad53452c4349e70",
+        "subdir": "src"
+      },
+      {
+        "name": "test262",
+        "repo": "tc39/test262",
+        "ref": "main@2026-11-11",
+        "sha": "2e58f87d8350ad51224617a041c6e041d52f8444",
+        "subdir": "test",
+        "skip_if": "negative:\\s*\\n\\s*phase:\\s*parse|flags:\\s*\\[[^\\]]*\\bmodule\\b"
+      }
+    ]
+  }
 }

@@ -13,9 +13,14 @@ for each corpus file:  oracle_nodes(bytes)  ─┐
 ```
 
 - `harness.py` knows nothing about Python syntax: fetching, compiling, loading, scoring and the CLI.
-- `python.py` is the language module: file extensions, the C symbol, the two category maps, the
-  convention skips, and the two node extractors. `harness.py` uses four of its names (`EXTS`,
-  `SYMBOL`, `oracle_nodes`, `grammar_nodes`); a new language is a module with the same four.
+- Each language is a module (`python.py`, `javascript.py`): file extensions, the C symbol, the
+  category maps, the convention skips, and the two node extractors. `harness.py` uses five of its
+  names (`EXTS`, `SYMBOL`, `oracle_name`, `oracle_nodes`, `grammar_nodes`) and picks the module
+  with `--lang` from `LANGS`. A new language is a module with the same five, plus a `pins.json` entry.
+- An oracle that does not run in Python runs as a long-lived helper process speaking one JSON
+  object per line: `{"src": text}` in, `{"nodes": [[category, startByte, endByte], ...]}` or
+  `{"rejected": reason}` out, offsets already converted to UTF-8 bytes. `oracles/javascript/oracle.mjs`
+  is the first; one process serves a whole run.
 - The oracle parses each file once per run, however many builds are passed.
 
 Design decisions:
@@ -33,9 +38,11 @@ Design decisions:
 |---|---|
 | `src/grammar_accuracy/harness.py` | Pins, fetch, compile/load builds, `Score`, CLI (`fetch`, `run`) |
 | `src/grammar_accuracy/python.py` | Python category maps, convention skips, `oracle_nodes`, `grammar_nodes` |
+| `src/grammar_accuracy/javascript.py` | JavaScript mapping; starts and talks to the Node oracle helper |
+| `oracles/javascript/oracle.mjs` | tsc-based JavaScript oracle (typescript pinned in its `package-lock.json`) |
 | `src/grammar_accuracy/__main__.py` | `python -m grammar_accuracy` |
-| `pins.json` | Pinned grammar commits (default builds) and corpus commits |
-| `tests/test_python.py` | Per-category agreement, convention skips, byte offsets, wrong-tree canary, score arithmetic |
+| `pins.json` | Per language: pinned grammar commits (default builds) and corpus commits; a corpus's optional `skip_if` regex excludes files by content |
+| `tests/test_python.py`, `tests/test_javascript.py` | Per-category agreement, convention skips, byte offsets, wrong-tree canary, score arithmetic |
 | `results/` | `--json` output of recorded runs |
 
 ## Configuration
@@ -64,8 +71,10 @@ uv lock --upgrade-package tree-sitter                  # then re-run tests and a
   left out, so a grammar can be wrong there without the score moving.
 - `--show` prints mismatches for the first build only.
 - Files are read and parsed one at a time in one process; a full run takes about a minute.
-- Python only so far. Other languages need an oracle module, and most reference parsers do not run
-  in Python (Go's `go/parser`, Rust's `syn`); those would run as a helper that prints node spans.
+- tsc is lenient as a JavaScript oracle: it accepts a few early errors (`a ?? b || c`) that a spec
+  parser rejects. test262's negative tests are skipped by their frontmatter for that reason.
+- tsc decides module or script from the file's own imports and exports, so test262's module-only
+  tests are skipped rather than mis-parsed as scripts.
 
 <!-- docvet:anchors
 GRAMMAR_ACCURACY_CACHE -> src/grammar_accuracy/harness.py

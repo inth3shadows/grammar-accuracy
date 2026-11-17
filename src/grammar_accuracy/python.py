@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import ast
 import re
+import sys
 import warnings
 
 EXTS = frozenset({'.py'})
@@ -70,6 +71,10 @@ GRAMMAR_SKIP = frozenset({'case_pattern'})
 TYPE_PARAM_DECL = {'class_definition': 'type_parameters', 'function_definition': 'type_parameters',
                    'type_alias_statement': 'left'}
 PARAM_LISTS = frozenset({'parameters', 'lambda_parameters', 'typed_parameter'})
+
+def oracle_name() -> str:
+    return f'CPython {sys.version.split()[0]} ast.parse'
+
 
 _LINE_END = re.compile(rb'\r\n|\r|\n')
 BOM = b'\xef\xbb\xbf'
