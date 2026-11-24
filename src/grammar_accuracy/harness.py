@@ -64,7 +64,11 @@ def _src_dir(path: Path) -> Path:
     for cand in (path, path / 'src'):
         if (cand / 'parser.c').is_file():
             return cand
-    raise SystemExit(f'{path}: no parser.c in it or in its src/')
+    hint = ''
+    if (path / 'grammar.js').is_file():
+        # grammar-orchard repos don't track generated files; their GitHub mirrors do
+        hint = ' (generated files untracked: run `tree-sitter generate` or use a checkout that has them)'
+    raise SystemExit(f'{path}: no parser.c in it or in its src/{hint}')
 
 
 def compile_grammar(path: Path) -> Path:
@@ -93,8 +97,16 @@ _PyCapsule_New.restype = ctypes.py_object
 _PyCapsule_New.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
 
 
+# grammar-orchard (codeberg.org/grammar-orchard) exports tree_sitter_<lang>_orchard
+SYMBOL_SUFFIXES = ('', '_orchard')
+
+
 def load_language(so: Path, symbol: str) -> tree_sitter.Language:
-    fn = getattr(ctypes.CDLL(str(so)), symbol)
+    lib = ctypes.CDLL(str(so))
+    names = [symbol + s for s in SYMBOL_SUFFIXES]
+    fn = next((getattr(lib, n) for n in names if hasattr(lib, n)), None)
+    if fn is None:
+        raise SystemExit(f"{so}: exports none of {', '.join(names)}")
     fn.restype = ctypes.c_void_p
     return tree_sitter.Language(_PyCapsule_New(fn(), b'tree_sitter.Language', None))
 
