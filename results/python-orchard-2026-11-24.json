@@ -1,0 +1,200 @@
+{
+  "language": "python",
+  "oracle": "CPython 3.14.5 ast.parse",
+  "files": 4911,
+  "rejected": 7,
+  "skipped": 0,
+  "corpora": {
+    "cpython": "ebf955df7a89ed0c7968f79faec1de49f61ed7cb",
+    "django": "47fe39af56ecd0ad73b9c7562511015e96b91b80",
+    "pydantic": "5c842dfc9c245fb37aa1f5ec5b55c1aed10bd7e6"
+  },
+  "builds": {
+    "upstream": {
+      "grammar_nodes": 1447946,
+      "oracle_nodes": 1447989,
+      "matched": 1447835,
+      "wrong": 111,
+      "missed": 154,
+      "precision": 0.9999233396825572,
+      "recall": 0.9998936456008989,
+      "error_files": 4,
+      "categories": {
+        "await": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2815
+        },
+        "binary": {
+          "wrong": 5,
+          "missed": 5,
+          "oracle": 45638
+        },
+        "boolean": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 9740
+        },
+        "call": {
+          "wrong": 15,
+          "missed": 31,
+          "oracle": 578615
+        },
+        "compare": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 41120
+        },
+        "comprehension": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 5767
+        },
+        "lambda": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 3279
+        },
+        "member": {
+          "wrong": 7,
+          "missed": 29,
+          "oracle": 672240
+        },
+        "slice": {
+          "wrong": 0,
+          "missed": 6,
+          "oracle": 6221
+        },
+        "spread": {
+          "wrong": 47,
+          "missed": 47,
+          "oracle": 7234
+        },
+        "subscript": {
+          "wrong": 35,
+          "missed": 36,
+          "oracle": 50770
+        },
+        "ternary": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2452
+        },
+        "unary": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 19443
+        },
+        "walrus": {
+          "wrong": 2,
+          "missed": 0,
+          "oracle": 439
+        },
+        "yield": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2216
+        }
+      },
+      "error_file_list": [
+        "cpython:test/test_annotationlib.py",
+        "cpython:test/test_compile.py",
+        "cpython:test/test_type_params.py",
+        "pydantic:tests/mypy/outputs/mypy-plugin_ini/frozen_field.py"
+      ]
+    },
+    "orchard": {
+      "grammar_nodes": 1447989,
+      "oracle_nodes": 1447989,
+      "matched": 1447897,
+      "wrong": 92,
+      "missed": 92,
+      "precision": 0.9999364636057319,
+      "recall": 0.9999364636057319,
+      "error_files": 4,
+      "categories": {
+        "await": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2815
+        },
+        "binary": {
+          "wrong": 3,
+          "missed": 3,
+          "oracle": 45638
+        },
+        "boolean": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 9740
+        },
+        "call": {
+          "wrong": 9,
+          "missed": 6,
+          "oracle": 578615
+        },
+        "compare": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 41120
+        },
+        "comprehension": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 5767
+        },
+        "lambda": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 3279
+        },
+        "member": {
+          "wrong": 2,
+          "missed": 4,
+          "oracle": 672240
+        },
+        "slice": {
+          "wrong": 0,
+          "missed": 3,
+          "oracle": 6221
+        },
+        "spread": {
+          "wrong": 43,
+          "missed": 41,
+          "oracle": 7234
+        },
+        "subscript": {
+          "wrong": 35,
+          "missed": 35,
+          "oracle": 50770
+        },
+        "ternary": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2452
+        },
+        "unary": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 19443
+        },
+        "walrus": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 439
+        },
+        "yield": {
+          "wrong": 0,
+          "missed": 0,
+          "oracle": 2216
+        }
+      },
+      "error_file_list": [
+        "cpython:test/test_compile.py",
+        "cpython:test/test_grammar.py",
+        "cpython:test/test_type_params.py",
+        "pydantic:tests/mypy/outputs/mypy-plugin_ini/frozen_field.py"
+      ]
+    }
+  }
+}

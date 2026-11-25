@@ -57,6 +57,22 @@ Wrong trees in v0.25.0 that the run surfaced. Each was confirmed by parsing a mi
 Not yet examined: the rest of the call and subscript misses, and the 4 error files
 (`results/*.json` lists them).
 
+### grammar-orchard
+
+[grammar-orchard](https://codeberg.org/grammar-orchard) maintains forks of unmaintained grammars.
+Measured 2026-11-24, built from its GitHub mirror (the Codeberg repos don't track `parser.c`).
+Full numbers: `results/python-orchard-2026-11-24.json`.
+
+| Build | Commit | Precision % | Recall % | Wrong | Missed | Error files |
+|---|---|---|---|---|---|---|
+| tree-sitter-python v0.25.0 | 293fdc0 | 99.992 | 99.989 | 111 | 154 | 4 |
+| tree-sitter-python-orchard 0.6.1 | f124a00 | 99.994 | 99.994 | 92 | 92 | 4 |
+
+0.6.1 fixes `type(s).p = 1`, `a ^ b & c`, `f'{x:=10}'` and splats in list literals. Still wrong,
+each confirmed with a minimal snippet: a splat in a set or subscript (`{*range(4)}` as
+`(*range)(4)`, `x[*a[b]]` as `(*a)[b]`; spread 43 wrong / 41 missed), `list[int] | str | None`
+nested to the right, and `def f(x: a[b:c])` read as a constrained type.
+
 ### Forks
 
 Measured 2026-11-17 with the same files, oracle and rules. GitHub listed 238 direct forks of
@@ -177,6 +193,13 @@ test262's spec corners and new syntax. Each class below was confirmed by parsing
 | `{a: 1}[0]` at statement start (a block, then an array) | a subscript of an object literal | few |
 
 "Nodes" counts wrong + missed nodes in the run, from the `--show` output, rounded.
+
+grammar-orchard's fork, measured 2026-11-24 from its GitHub mirror
+(`results/javascript-orchard-2026-11-24.json`), is at the same numbers apart from 2 call nodes:
+
+| Build | Commit | Files | Precision % | Recall % | Wrong | Missed | Error files |
+|---|---|---|---|---|---|---|---|
+| tree-sitter-javascript-orchard 0.2.0, all four corpora | c1cb253 | 50,324 | 99.969 | 99.990 | 473 | 151 | 226 |
 
 ## Prerequisites
 
